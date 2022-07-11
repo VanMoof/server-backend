@@ -10,7 +10,7 @@ except ImportError:
     sqlparse = None
 
 SECTION_NAME = "pglogical"
-DDL_KEYWORDS = ("CREATE", "ALTER", "DROP", "TRUNCATE")
+DDL_KEYWORDS = ("CREATE", "ALTER", "DROP", "TRUNCATE", "INHERITS")
 
 
 def schema_qualify(parsed_query, schema="public"):
@@ -38,10 +38,12 @@ def schema_qualify(parsed_query, schema="public"):
                 if next_token.is_keyword and next_token.normalized in (
                         'TEMP', 'TEMPORARY'
                 ):
-                    # don't qualify CREATE TEMP TABLE statements
-                    is_qualified = True
                     break
                 if not (next_token.is_whitespace or next_token.is_keyword):
+                    if token.normalized == 'INHERITS':
+                        is_qualified = True
+                        yield next_token
+                        next_token = token_iterator.__next__()
                     break
                 yield next_token
             if not next_token:
